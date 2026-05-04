@@ -1,6 +1,6 @@
 # Distributed Backtesting of US Equity Trading Strategies
 
-**CS-GY 6513 Big Data — NYU Tandon, Spring 2026**
+**CS-GY 6513 Big Data - NYU Tandon, Spring 2026**
 **Team:** Alamri, Daniela, Carol
 **Pipeline date range:** 2010-01-04 → 2026-04-17
 
@@ -10,9 +10,9 @@
 
 We implemented a distributed backtesting pipeline for US equity trading strategies on PySpark 3.5.3 + Parquet, ingesting 503 current S&P 500 constituents (1.94M daily OHLCV rows over 16 years), 5 macroeconomic series from FRED, and computing 27 engineered features via Spark window functions. Performance evaluation proceeds in three stages of increasing rigor:
 
-1. A **45-configuration in-sample sweep** (27 momentum + 18 mean-reversion) parallelized via Spark RDDs (3.36× speedup on 12 cores). Top Sharpe = 0.27. Deflated Sharpe Ratio ≈ 0 across all top 5 configs — **none survive multiple-testing correction.**
-2. A **180-configuration bonus sweep** (long-short + long-only momentum) selected against an inline equal-weight S&P 500 benchmark. **66 of 180 configurations beat the benchmark on both Sharpe and max drawdown** in-sample; the winner (long-only, 126-day momentum, top 5%, 63-day rebalance) achieves Sharpe 1.27 and grows $1M into $116M — but DSR is still ≈ 0.
-3. A **production-realities pass**: walk-forward out-of-sample validation (2,160 train backtests across 12 OOS windows × 180 configs in parallel), capacity analysis at $1M → $1B AUM via Spark joins on weights × ADV, borrow-cost sensitivity, the `adj_close` bug fix, and stacked-friction sensitivity to permanent market impact + 35% short-term tax. The walk-forward OOS Sharpe is **1.03** (DSR **1.5%** at n_trials=12) and grows $1M into $14.5M vs $5.0M for the equal-weight benchmark; after stacking impact and tax drag, the deployable estimate is **$5.5M** — still beating the benchmark, just barely.
+1. A **45-configuration in-sample sweep** (27 momentum + 18 mean-reversion) parallelized via Spark RDDs (3.36× speedup on 12 cores). Top Sharpe = 0.27. Deflated Sharpe Ratio ≈ 0 across all top 5 configs - **none survive multiple-testing correction.**
+2. A **180-configuration bonus sweep** (long-short + long-only momentum) selected against an inline equal-weight S&P 500 benchmark. **66 of 180 configurations beat the benchmark on both Sharpe and max drawdown** in-sample; the winner (long-only, 126-day momentum, top 5%, 63-day rebalance) achieves Sharpe 1.27 and grows $1M into $116M - but DSR is still ≈ 0.
+3. A **production-realities pass**: walk-forward out-of-sample validation (2,160 train backtests across 12 OOS windows × 180 configs in parallel), capacity analysis at $1M → $1B AUM via Spark joins on weights × ADV, borrow-cost sensitivity, the `adj_close` bug fix, and stacked-friction sensitivity to permanent market impact + 35% short-term tax. The walk-forward OOS Sharpe is **1.03** (DSR **1.5%** at n_trials=12) and grows $1M into $14.5M vs $5.0M for the equal-weight benchmark; after stacking impact and tax drag, the deployable estimate is **$5.5M** - still beating the benchmark, just barely.
 
 The headline methodological contribution: the same Spark pipeline supports both the in-sample search **and** the walk-forward validation that disciplines it, plus the data-quality audit in `notebooks/00_smoke_test.ipynb` (per-ticker coverage, per-column null census, halt counts, return outliers).
 
@@ -22,9 +22,9 @@ The headline methodological contribution: the same Spark pipeline supports both 
 
 **Objectives.**
 1. Build an end-to-end pipeline that ingests a realistic US equity universe and computes features at scale using Spark, with explicit data-quality auditing of every layer.
-2. Execute distributed parameter sweeps — single backtests are embarrassingly parallel across configurations, and Spark RDDs are the right primitive.
+2. Execute distributed parameter sweeps - single backtests are embarrassingly parallel across configurations, and Spark RDDs are the right primitive.
 3. Report performance honestly: include the Deflated Sharpe Ratio for in-sample search; demonstrate walk-forward out-of-sample validation as the answer to selection bias.
-4. Quantify what changes when a "winner" is deployed in the actual market — capacity, market impact, borrow cost, taxes — and show that big-data tooling makes those analyses tractable rather than overnight projects.
+4. Quantify what changes when a "winner" is deployed in the actual market - capacity, market impact, borrow cost, taxes - and show that big-data tooling makes those analyses tractable rather than overnight projects.
 5. Produce a reproducible, audit-friendly codebase that teammates can clone and re-run.
 
 ## 3. Methodology
@@ -55,7 +55,7 @@ Where each missing-data decision lives:
 | Layer | Decision | Source |
 |---|---|---|
 | OHLCV ingestion | Drop rows missing `close` (panel-anchor price) | `src/download_ohlcv.py:60` |
-| OHLCV ingestion | `volume.fillna(0)` — keep halt days but flag them | `src/download_ohlcv.py:66` |
+| OHLCV ingestion | `volume.fillna(0)` - keep halt days but flag them | `src/download_ohlcv.py:66` |
 | OHLCV ingestion | Per-batch retry × 2 with 60 s backoff; failures logged | `src/download_ohlcv.py:77-95` |
 | FRED ingestion | Daily reindex + ffill (monthly → daily panel) | `src/download_fred.py:58` |
 | FRED ingestion | Drop leading rows with all-null series | `src/download_fred.py:63` |
@@ -64,7 +64,7 @@ Where each missing-data decision lives:
 | Strategies | `dropna(subset=[lookback_col])` before quantile cut | `src/strategies.py:33`, `:83` |
 | Backtest | `.fillna(0)` on weights/returns matrices | `src/backtest.py:32`, `:46` |
 | Metrics | `dropna()` + `isnan` guards | `src/metrics.py:22-25` |
-| Universe | Today's S&P 500 only (no point-in-time membership) | `src/universe.py` — survivorship caveat, see §6 |
+| Universe | Today's S&P 500 only (no point-in-time membership) | `src/universe.py` - survivorship caveat, see §6 |
 
 ### 3.3 Architecture
 
@@ -87,7 +87,7 @@ reports/walkforward_oos_summary.csv
 reports/figures/*.{html,png}
 ```
 
-The critical scale decision: **features are computed in Spark** (where group-by-ticker window functions distribute trivially) but **individual backtests run in pandas inside Spark tasks** — a single backtest is small (~4,000 dates × ~500 tickers) and vectorized pandas beats Spark for that workload. The distribution happens at the *configuration* level, not the row level.
+The critical scale decision: **features are computed in Spark** (where group-by-ticker window functions distribute trivially) but **individual backtests run in pandas inside Spark tasks** - a single backtest is small (~4,000 dates × ~500 tickers) and vectorized pandas beats Spark for that workload. The distribution happens at the *configuration* level, not the row level.
 
 ### 3.4 Feature engineering
 
@@ -127,9 +127,9 @@ Three sweeps progressively widen the grid. All distributed via `sc.parallelize(c
 | Bonus (§4.6) | 3 lookbacks × 5 top_pct × 6 rebal × 2 sides | 180 | 39.1 s | `06_bonus_extended_sweep.ipynb` |
 | Walk-forward (§5.1) | 12 OOS years × 180 train configs | 2,160 | 214.8 s | `07_production_realities.ipynb` |
 
-## 4. Results — In-Sample Sweeps
+## 4. Results - In-Sample Sweeps
 
-### 4.1 Baseline 45-config sweep — Top 10 by raw Sharpe
+### 4.1 Baseline 45-config sweep - Top 10 by raw Sharpe
 
 | config | strategy | key params | Sharpe | Sortino | Max DD | CAGR | Calmar | Turnover |
 |---|---|---|---:|---:|---:|---:|---:|---:|
@@ -162,16 +162,16 @@ DSR = probability the observed Sharpe exceeds the expected maximum under the nul
 
 | Sweep | Reported Sharpe | n_trials charged | DSR | Verdict |
 |---|---:|---:|---:|---|
-| Baseline 45 — `mom_011` | 0.270 | 45 | 0.0001 | False discovery |
-| Bonus 180 — `lo_124` | 1.273 | 180 | ≈ 0 | False discovery |
-| **Walk-forward stitched OOS** | **1.026** | **12** | **0.015** | **Borderline — best-defended** |
+| Baseline 45 - `mom_011` | 0.270 | 45 | 0.0001 | False discovery |
+| Bonus 180 - `lo_124` | 1.273 | 180 | ≈ 0 | False discovery |
+| **Walk-forward stitched OOS** | **1.026** | **12** | **0.015** | **Borderline - best-defended** |
 | Walk-forward stitched OOS | 1.026 | 1 | 1.000 | If "pick best train each year" counts as one strategy |
 
-Daily-return skew = −0.47, excess kurtosis = +6.96 — both pull DSR *down* further from the normal-returns baseline. The walk-forward Sharpe is the only number that survives any honest accounting.
+Daily-return skew = −0.47, excess kurtosis = +6.96 - both pull DSR *down* further from the normal-returns baseline. The walk-forward Sharpe is the only number that survives any honest accounting.
 
 ### 4.4 Parameter sensitivity (baseline sweep)
 
-Momentum heatmap shows Sharpe rising as rebalance frequency drops 5 → 21 → 63 days — faster rebalancing is dominated by transaction costs. Mean-reversion heatmap shows the opposite: longer holding (20 days) and more extreme entry z-scores help marginally.
+Momentum heatmap shows Sharpe rising as rebalance frequency drops 5 → 21 → 63 days - faster rebalancing is dominated by transaction costs. Mean-reversion heatmap shows the opposite: longer holding (20 days) and more extreme entry z-scores help marginally.
 
 ![Momentum heatmap](figures/fig4a_heatmap_momentum.png)
 
@@ -186,21 +186,21 @@ The scatter confirms turnover ↔ performance: mean-reversion runs 15–25× the
 | Run | Configs | Wall time | Rate |
 |---|---|---|---|
 | Sequential (3 configs, measured) | 3 | 4.33 s | 1.44 s/config |
-| Sequential (45 configs, extrapolated) | 45 | 65.01 s | — |
+| Sequential (45 configs, extrapolated) | 45 | 65.01 s | - |
 | Parallel, 12 cores, RDD.map | 45 | **19.36 s** | 2.32 configs/sec |
 | **Speedup** | | | **3.36×** |
 
 Sub-linear because of (a) Spark task-launch overhead per config, (b) pandas-in-worker GIL contention on a single JVM host, (c) broadcast deserialization amortized over only 45 tasks. On a real cluster with 100+ configs, the speedup approaches the core count.
 
-### 4.6 Bonus extended sweep — beating the benchmark in-sample
+### 4.6 Bonus extended sweep - beating the benchmark in-sample
 
-A wider 180-config grid (3 lookbacks × 5 top percentiles × 6 rebalance frequencies × {long-short, long-only}) selected against an **inline equal-weight S&P 500 benchmark** (long-only, daily-rebalanced cross-sectional mean of returns — same universe, no extra download).
+A wider 180-config grid (3 lookbacks × 5 top percentiles × 6 rebalance frequencies × {long-short, long-only}) selected against an **inline equal-weight S&P 500 benchmark** (long-only, daily-rebalanced cross-sectional mean of returns - same universe, no extra download).
 
 Benchmark metrics over the full 2010–2026 history: Sharpe **0.913**, CAGR **15.92%**, Max DD **−38.33%**, $1M → **$11.07M**.
 
 Selection rule: configurations that beat the benchmark on **both** Sharpe AND max drawdown.
 
-**66 of 180 configurations cleared both bars.** Winner: **`lo_124`** — long-only, 126-day momentum lookback, top 5%, rebalance every 63 trading days.
+**66 of 180 configurations cleared both bars.** Winner: **`lo_124`** - long-only, 126-day momentum lookback, top 5%, rebalance every 63 trading days.
 
 | Metric | Winner (`lo_124`) | Equal-weight benchmark | Δ |
 |---|---:|---:|---:|
@@ -217,7 +217,7 @@ Selection rule: configurations that beat the benchmark on **both** Sharpe AND ma
 
 ![Bonus top 10 by Sharpe](figures/bonus_top10_sharpe.png)
 
-The in-sample number is impressive but **DSR ≈ 0** — out of 180 trials, finding one with Sharpe 1.27 is exactly what you'd expect by chance. The next section disciplines this with walk-forward validation.
+The in-sample number is impressive but **DSR ≈ 0** - out of 180 trials, finding one with Sharpe 1.27 is exactly what you'd expect by chance. The next section disciplines this with walk-forward validation.
 
 ## 5. Production Realities
 
@@ -227,7 +227,7 @@ The bonus number is a research artifact. This section asks: what happens when a 
 
 **Caveat:** picking the best of 180 in-sample is statistical guarantee of in-sample fit, not out-of-sample edge.
 
-**Mitigation:** for each OOS year Y in 2014–2025, run all 180 configurations on data 2010 → end of Y−1 (expanding window), pick the highest-Sharpe config, evaluate that exact config on year Y. **2,160 train backtests fanned out via `sc.parallelize().map().collect()`** — 215 s on 12 local cores.
+**Mitigation:** for each OOS year Y in 2014–2025, run all 180 configurations on data 2010 → end of Y−1 (expanding window), pick the highest-Sharpe config, evaluate that exact config on year Y. **2,160 train backtests fanned out via `sc.parallelize().map().collect()`** - 215 s on 12 local cores.
 
 | | Walk-forward (honest) | Equal-weight benchmark | In-sample bonus winner |
 |---|---:|---:|---:|
@@ -257,13 +257,13 @@ Per-year record: walk-forward beat benchmark in 7 of 12 years; lost in 5. Worst 
 
 ![Capacity curve](figures/prod_capacity_curve.png)
 
-The capacity ceiling sits between $100M and $1B — at $1B the median trade consumes 19% of daily volume, which is industrially infeasible regardless of what the linear-impact model says about the resulting Sharpe.
+The capacity ceiling sits between $100M and $1B - at $1B the median trade consumes 19% of daily volume, which is industrially infeasible regardless of what the linear-impact model says about the resulting Sharpe.
 
 ### 5.3 Borrow cost on shorts
 
 **Caveat:** real shorts cost ~25–100 bps/yr in borrow + dividends paid out. Doesn't bite our long-only winner.
 
-**Mitigation:** quantified for the best **long/short** config from the bonus sweep (`lo_034`: long/short, mom_126d, top 5%, 63d rebal — pre-borrow Sharpe 0.367). Sensitivity at four standard borrow rates:
+**Mitigation:** quantified for the best **long/short** config from the bonus sweep (`lo_034`: long/short, mom_126d, top 5%, 63d rebal - pre-borrow Sharpe 0.367). Sensitivity at four standard borrow rates:
 
 | Borrow (bps/yr) | Sharpe | CAGR | $1M end value |
 |---:|---:|---:|---:|
@@ -286,14 +286,14 @@ Best L/S configuration loses to the benchmark even **before** borrow charges. Co
 | `adj_close` (fix) | **1.310** | **$135,795,929** |
 | Δ | +0.037 | +$19,047,299 |
 
-A **+$19M error from one line of buggy returns code**. Highest-leverage code change in the repo — affects every strategy, not just this winner.
+A **+$19M error from one line of buggy returns code**. Highest-leverage code change in the repo - affects every strategy, not just this winner.
 
 ### 5.5 Stacked-friction sensitivity
 
 What's left after impact + tax? Apply two of the largest unmodeled costs to the walk-forward stream:
 
-- **Permanent market impact** — Almgren-Chriss says ~half of trading impact is permanent. Conservative proxy: double the per-trade cost (5 → 10 bps).
-- **Tax drag** — 63-day rebalance ⇒ all gains short-term ⇒ 35% effective US rate. Tax-exempt mandates skip this layer.
+- **Permanent market impact** - Almgren-Chriss says ~half of trading impact is permanent. Conservative proxy: double the per-trade cost (5 → 10 bps).
+- **Tax drag** - 63-day rebalance ⇒ all gains short-term ⇒ 35% effective US rate. Tax-exempt mandates skip this layer.
 
 | Layer | Sharpe | CAGR | Max DD | $1M end value |
 |---|---:|---:|---:|---:|
@@ -319,7 +319,7 @@ What's left after impact + tax? Apply two of the largest unmodeled costs to the 
 
 The dataset is modest (~2M rows, ~1 GB Parquet); the parallelism pattern is the point. The same pipeline scales to:
 
-- **Minute-level bars:** ~390× more rows per ticker. Feature engineering unchanged — Spark window functions handle billions of rows on a cluster. Per-config backtest slows; *distribution* across configs unchanged.
+- **Minute-level bars:** ~390× more rows per ticker. Feature engineering unchanged - Spark window functions handle billions of rows on a cluster. Per-config backtest slows; *distribution* across configs unchanged.
 - **Global equities:** ~50× more tickers. Same Parquet-per-ticker layout; broadcast payload eventually exceeds practical RDD broadcast (~8 GB) and we'd switch to repartitioned DataFrame joins.
 - **Larger grids:** at 10,000+ configurations the parallelism dominates overhead and we expect near-linear scaling until cluster core count.
 
@@ -337,18 +337,18 @@ What the production-realities pass quantified:
 
 Still open:
 
-1. **Survivorship bias** — universe is *current* S&P 500 constituents (`src/universe.py` pulls live Wikipedia). Companies that delisted/were acquired/dropped between 2010 and 2026 are absent. Inflates long-side returns and removes the best historical short candidates. Fix would require a point-in-time membership feed (CRSP, Compustat).
+1. **Survivorship bias** - universe is *current* S&P 500 constituents (`src/universe.py` pulls live Wikipedia). Companies that delisted/were acquired/dropped between 2010 and 2026 are absent. Inflates long-side returns and removes the best historical short candidates. Fix would require a point-in-time membership feed (CRSP, Compustat).
 2. **Daily resolution only.** Intraday signals (opening-range breakouts, microstructure) out of scope.
 3. **No regime-aware switching.** All strategies use fixed parameters across QE / normalization / pandemic / 2022 bear market. Walk-forward partially addresses this (re-selects yearly) but the underlying signal family is constant.
-4. **No risk limits** — no per-name caps, sector neutrality, or vol target. A real prod strategy would size by inverse-vol and cap concentration.
+4. **No risk limits** - no per-name caps, sector neutrality, or vol target. A real prod strategy would size by inverse-vol and cap concentration.
 5. **Linear-impact model is conservative.** Real impact is closer to a square-root function of participation rate (Almgren-Chriss); the linear model with our 500 bps cap probably *under-counts* impact at the largest AUM levels.
 
 ## 7. Conclusion
 
 We built and ran three progressively rigorous evaluation passes on the same Spark pipeline:
 
-- **Baseline 45-config sweep**: top Sharpe 0.27, DSR ≈ 0 — textbook example of why naive grid-search Sharpes are not claims of alpha.
-- **Bonus 180-config sweep**: a winner that beats the equal-weight benchmark on every metric in-sample (Sharpe 1.27, $1M → $116M), still with DSR ≈ 0 — a real-looking number that does not survive the multiple-testing accounting.
+- **Baseline 45-config sweep**: top Sharpe 0.27, DSR ≈ 0 - textbook example of why naive grid-search Sharpes are not claims of alpha.
+- **Bonus 180-config sweep**: a winner that beats the equal-weight benchmark on every metric in-sample (Sharpe 1.27, $1M → $116M), still with DSR ≈ 0 - a real-looking number that does not survive the multiple-testing accounting.
 - **Walk-forward + production-realities pass**: an honest **OOS Sharpe of 1.03, DSR 1.5%, $1M → $14.5M**, dropping to **$5.5M after permanent impact + 35% tax**, vs $5.0M for the equal-weight benchmark.
 
 The methodological point: each step away from naive in-sample search costs alpha, and the right way to find out *how much* it costs is to run that comparison at scale. Spark RDDs make 2,160 walk-forward backtests a 3-minute job instead of an overnight one, and the same pipeline that produced the in-sample fantasy ($116M) produced the disciplined, auditable estimate ($5.5M) that survives every realistic friction we know how to model.

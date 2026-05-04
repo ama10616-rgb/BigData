@@ -57,7 +57,7 @@ jupyter notebook
 ## Data provenance
 
 - **Equities:** yfinance (Yahoo Finance), batch download in chunks of 50. Known caveats: survivorship bias (current SP500 constituents only; delisted or dropped names absent), and point-in-time split/dividend adjustments reflect current snapshot, not historical.
-- **Macroeconomic series:** FRED via `pandas-datareader` — VIXCLS, DGS10, FEDFUNDS, CPIAUCSL, UNRATE.
+- **Macroeconomic series:** FRED via `pandas-datareader` - VIXCLS, DGS10, FEDFUNDS, CPIAUCSL, UNRATE.
 - **Index constituents:** Wikipedia page *List of S&P 500 companies*, scraped with a browser User-Agent (pandas read_html via raw HTTP request).
 
 ## Repo structure
@@ -84,7 +84,7 @@ bigdata-trading/
 │   └── figures/                  7 Plotly charts, HTML + PNG
 ├── data/
 │   ├── raw/
-│   │   ├── sp500_tickers.txt     tracked — reproducibility anchor
+│   │   ├── sp500_tickers.txt     tracked - reproducibility anchor
 │   │   └── sp500_sectors.csv     tracked
 │   └── parquet/                  gitignored, regenerated from scripts
 ├── requirements.txt              pinned dependency list
